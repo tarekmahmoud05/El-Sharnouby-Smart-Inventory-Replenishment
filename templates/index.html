@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Inventory & Replenishment Portal</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-50 text-slate-800 font-sans">
+
+    <!-- Header -->
+    <header class="bg-slate-900 text-white shadow-md py-6 px-8">
+        <div class="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center">
+            <div>
+                <h1 class="text-2xl font-bold tracking-wide">🏭 Smart Inventory & Replenishment</h1>
+                <p class="text-slate-400 text-sm mt-1">AI-Driven Supply Chain Decision Hub — What should move, where, and when?</p>
+            </div>
+            <div class="mt-4 md:mt-0 flex items-center space-x-3">
+                <label for="locationSelect" class="text-sm font-medium text-slate-300">Select Location:</label>
+                <select id="locationSelect" onchange="fetchData(this.value)" class="bg-slate-800 text-white border border-slate-700 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <!-- Populated dynamically -->
+                </select>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="max-w-7xl mx-auto py-8 px-6">
+        
+        <!-- Summary Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Active Period / Month</p>
+                <h3 id="activeMonth" class="text-2xl font-bold text-slate-900 mt-2">Loading...</h3>
+            </div>
+            <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Items Needing Restock</p>
+                <h3 id="totalItems" class="text-2xl font-bold text-blue-600 mt-2">0</h3>
+            </div>
+            <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Total Units to Order</p>
+                <h3 id="totalUnits" class="text-2xl font-bold text-emerald-600 mt-2">0</h3>
+            </div>
+        </div>
+
+        <!-- Data Table Card -->
+        <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+            <div class="p-6 border-b border-slate-100 flex justify-between items-center">
+                <h3 class="text-lg font-bold text-slate-900">📋 Actionable Replenishment Suggestions</h3>
+                <span id="locationBadge" class="bg-blue-50 text-blue-700 text-xs font-semibold px-3 py-1 rounded-full">Location: --</span>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="bg-slate-50 text-slate-500 text-xs uppercase tracking-wider border-b border-slate-200">
+                            <th class="py-4 px-6">Product Name</th>
+                            <th class="py-4 px-6">Projected Ending Stock</th>
+                            <th class="py-4 px-6">Suggested Order Units</th>
+                            <th class="py-4 px-6">Action Required</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tableBody" class="divide-y divide-slate-100 text-sm">
+                        <!-- Populated dynamically via JavaScript -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+
+    <!-- JavaScript Logic -->
+    <script>
+        async function loadLocations() {
+            const res = await fetch('/api/locations');
+            const locations = await res.json();
+            const select = document.getElementById('locationSelect');
+            select.innerHTML = '';
+            locations.forEach(loc => {
+                const opt = document.createElement('option');
+                opt.value = loc;
+                opt.textContent = loc;
+                select.appendChild(opt);
+            });
+            if (locations.length > 0) {
+                fetchData(locations[0]);
+            }
+        }
+
+        async function fetchData(locationId) {
+            document.getElementById('locationBadge').textContent = `Location: ${locationId}`;
+            const res = await fetch(`/api/replenishment/${locationId}`);
+            const data = await res.json();
+
+            document.getElementById('activeMonth').textContent = data.latest_month;
+            document.getElementById('totalItems').textContent = data.total_items;
+            document.getElementById('totalUnits').textContent = data.total_units.toLocaleString();
+
+            const tbody = document.getElementById('tableBody');
+            tbody.innerHTML = '';
+
+            if (data.items.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="4" class="py-8 text-center text-slate-400">✅ All stock levels are healthy. No replenishment needed for this period.</td></tr>`;
+                return;
+            }
+
+            data.items.forEach(item => {
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-slate-50 transition-colors";
+                tr.innerHTML = `
+                    <td class="py-4 px-6 font-medium text-slate-900">${item.product_name}</td>
+                    <td class="py-4 px-6 text-slate-600">${item.ending_stock}</td>
+                    <td class="py-4 px-6 font-semibold text-blue-600">+${item.order_units.toLocaleString()} units</td>
+                    <td class="py-4 px-6"><span class="bg-rose-50 text-rose-700 text-xs font-bold px-2.5 py-1 rounded-md border border-rose-100">🚨 ${item.action}</span></td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        // Initialize on page load
+        loadLocations();
+    </script>
+</body>
+</html>
