@@ -4,6 +4,10 @@ An end-to-end AI-driven inventory management and replenishment system that uses 
 
 The system combines time-series forecasting, inventory simulation, and a Flask-based web application to support data-driven supply chain decisions, helping businesses determine **what to order, how much to order, where to replenish, and when**.
 
+## Demo
+
+https://github.com/user-attachments/assets/c1fee4d3-5f5a-4441-aa09-70b2391199ae
+
 ## 🚀 Project Overview
 
 Traditional inventory management often relies on fixed reorder levels and historical averages, which may not adequately capture demand variability, seasonality, or supplier lead times.
